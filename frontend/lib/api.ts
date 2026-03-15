@@ -5,9 +5,8 @@ export async function apiRequest(
   options: RequestInit = {},
   token?: string
 ) {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options.headers,
   };
 
   if (token) {
