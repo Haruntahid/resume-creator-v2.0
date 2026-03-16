@@ -2512,6 +2512,11 @@ router.post("/", async (req, res) => {
 
 // Update resume
 router.put("/:id", async (req, res) => {
+  // ── ADD THIS BLOCK ──
+  if (req.params.id === "new") {
+    return res.status(400).json({ message: "Cannot update unsaved resume" });
+  }
+
   try {
     const user = await User.findOne({ firebaseUid: req.user.uid });
     if (!user) {

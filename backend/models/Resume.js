@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const experienceSchema = new mongoose.Schema({
   company: String,
@@ -20,30 +20,48 @@ const educationSchema = new mongoose.Schema({
   gpa: String,
 });
 
+// NEW: Custom section item schema
+const customSectionItemSchema = new mongoose.Schema({
+  title: String,
+  subtitle: String,
+  startDate: String,
+  endDate: String,
+  current: Boolean,
+  description: String,
+  bullets: [String],
+  url: String,
+});
+
+// NEW: Custom section schema
+const customSectionSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // e.g. "Projects", "Certifications"
+  items: [customSectionItemSchema],
+});
+
 const resumeSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
   },
   title: {
     type: String,
     required: true,
-    default: 'Untitled Resume',
+    default: "Untitled Resume",
   },
   template: {
     type: String,
     required: true,
-    default: 'modern',
+    default: "modern",
   },
   theme: {
     primaryColor: {
       type: String,
-      default: '#3b82f6',
+      default: "#3b82f6",
     },
     font: {
       type: String,
-      default: 'inter',
+      default: "inter",
     },
   },
   personalInfo: {
@@ -60,20 +78,25 @@ const resumeSchema = new mongoose.Schema({
   experience: [experienceSchema],
   education: [educationSchema],
   skills: [String],
-  sections: [{
-    type: {
-      type: String,
-      enum: ['experience', 'education', 'skills', 'summary', 'custom'],
+  customSections: [customSectionSchema], // NEW
+  sections: [
+    {
+      type: {
+        type: String,
+        enum: ["experience", "education", "skills", "summary", "custom"],
+      },
+      order: Number,
     },
-    order: Number,
-  }],
-  versions: [{
-    data: mongoose.Schema.Types.Mixed,
-    createdAt: {
-      type: Date,
-      default: Date.now,
+  ],
+  versions: [
+    {
+      data: mongoose.Schema.Types.Mixed,
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
     },
-  }],
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -84,10 +107,9 @@ const resumeSchema = new mongoose.Schema({
   },
 });
 
-resumeSchema.pre('save', function(next) {
+resumeSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-export default mongoose.model('Resume', resumeSchema);
-
+export default mongoose.model("Resume", resumeSchema);
