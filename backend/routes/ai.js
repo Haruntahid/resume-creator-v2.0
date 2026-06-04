@@ -130,9 +130,7 @@ router.post("/parse-resume", upload.single("file"), async (req, res) => {
 Resume text:
 ${text}`;
 
-    const result = await geminiModel.generateContent(prompt);
-    const response = result.response;
-    const rawText = response.text();
+    const rawText = await callGeminiAPI(prompt);
 
     // Parse JSON response
     let parsedData;
@@ -143,8 +141,8 @@ ${text}`;
         .trim();
       parsedData = JSON.parse(jsonText);
     } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      throw new Error("Failed to parse AI response");
+      console.error("JSON parse error:", parseError, "Raw response was:", rawText);
+      throw new Error("Failed to parse AI response into JSON");
     }
 
     res.json(parsedData);
@@ -156,6 +154,122 @@ ${text}`;
   }
 });
 
-// Only PDF parsing endpoint remains - other AI features removed as requested
+// AI Bullet Point Enhancer
+router.post("/enhance-bullet", async (req, res) => {
+  try {
+    const { bullet, jobTitle, industry } = req.body;
+    if (!bullet) {
+      return res.status(400).json({ message: "Bullet point text is required" });
+    }
+
+    const prompt = `You are a professional resume writer. Improve this work experience bullet point to be more impactful, using strong action verbs and quantified results where possible. Keep it concise (max 20 words). Return only the improved bullet point text, nothing else.
+
+Original: ${bullet}
+Job Title: ${jobTitle || "Professional"}
+Industry: ${industry || "Technology"}`;
+
+    const enhanced = await callGeminiAPI(prompt);
+    res.json({ enhanced: enhanced.trim() });
+  } catch (error) {
+    console.error("Enhance bullet error:", error);
+    res.status(500).json({ message: "Failed to enhance bullet point", error: error.message });
+  }
+});
+
+// AI Professional Summary Generator
+router.post("/generate-summary", async (req, res) => {
+  try {
+    const { jobTitle, yearsExperience, skills } = req.body;
+    if (!jobTitle) {
+      return res.status(400).json({ message: "Job title is required" });
+    }
+
+    const skillsStr = Array.isArray(skills) ? skills.join(", ") : skills || "";
+    const prompt = `Write a professional resume summary in 2-3 sentences for a ${jobTitle} with ${yearsExperience || "some"} years of experience in ${skillsStr || "their field"}. Make it compelling, ATS-friendly, and specific. Return only the summary text.`;
+
+    const summary = await callGeminiAPI(prompt);
+    res.json({ summary: summary.trim() });
+  } catch (error) {
+    console.error("Generate summary error:", error);
+    res.status(500).json({ message: "Failed to generate summary", error: error.message });
+  }
+});
+
+// AI Skills Suggester
+router.post("/suggest-skills", async (req, res) => {
+  try {
+    const { jobTitle } = req.body;
+    if (!jobTitle) {
+      return res.status(400).json({ message: "Job title is required" });
+    }
+
+    const prompt = `List 10 relevant technical and soft skills for a ${jobTitle} role. Return as a JSON array of strings only. Example: ["React", "Node.js", "Team Leadership"]`;
+
+    const rawText = await callGeminiAPI(prompt);
+    let skills = [];
+    try {
+      const jsonText = rawText
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+      skills = JSON.parse(jsonText);
+    } catch (e) {
+      // Fallback: extract list items if JSON parse fails
+      skills = rawText
+        .split("\n")
+        .map(line => line.replace(/^[-*0-9.\s]+/, "").replace(/"/g, "").trim())
+        .filter(line => line.length > 0 && line.length < 40)
+        .slice(0, 10);
+    }
+
+    res.json({ skills });
+  } catch (error) {
+    console.error("Suggest skills error:", error);
+    res.status(500).json({ message: "Failed to suggest skills", error: error.message });
+  }
+});
+
+// AI Job Description Tailoring
+router.post("/tailor-resume", async (req, res) => {
+  try {
+    const { jobDescription, summary, skills } = req.body;
+    if (!jobDescription) {
+      return res.status(400).json({ message: "Job description is required" });
+    }
+
+    const skillsStr = Array.isArray(skills) ? skills.join(", ") : skills || "";
+    const prompt = `Adjust the following resume summary and highlight relevant skills to tailor the resume for this job description.
+Job Description: ${jobDescription}
+Current Summary: ${summary || ""}
+Current Skills: ${skillsStr || ""}
+
+Return ONLY a JSON object with this exact structure (no markdown code blocks, just raw JSON):
+{
+  "summary": "improved tailored summary here",
+  "skillsToHighlight": ["skill1", "skill2", "skill3"]
+}`;
+
+    const rawText = await callGeminiAPI(prompt);
+    let result = { summary: summary || "", skillsToHighlight: [] };
+    try {
+      const jsonText = rawText
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+      result = JSON.parse(jsonText);
+    } catch (e) {
+      console.error("Tailor resume JSON parse error:", e);
+      result = {
+        summary: rawText,
+        skillsToHighlight: Array.isArray(skills) ? skills.slice(0, 5) : []
+      };
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Tailor resume error:", error);
+    res.status(500).json({ message: "Failed to tailor resume", error: error.message });
+  }
+});
 
 export default router;

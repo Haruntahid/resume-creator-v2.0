@@ -103,6 +103,56 @@ export const aiApi = {
       return res.json();
     });
   },
+  enhanceBullet: (bullet: string, jobTitle: string, token: string) => {
+    return apiRequest(
+      "/api/ai/enhance-bullet",
+      {
+        method: "POST",
+        body: JSON.stringify({ bullet, jobTitle }),
+      },
+      token
+    );
+  },
+  generateSummary: (
+    jobTitle: string,
+    yearsExperience: string,
+    skills: string[],
+    token: string
+  ) => {
+    return apiRequest(
+      "/api/ai/generate-summary",
+      {
+        method: "POST",
+        body: JSON.stringify({ jobTitle, yearsExperience, skills }),
+      },
+      token
+    );
+  },
+  suggestSkills: (jobTitle: string, token: string) => {
+    return apiRequest(
+      "/api/ai/suggest-skills",
+      {
+        method: "POST",
+        body: JSON.stringify({ jobTitle }),
+      },
+      token
+    );
+  },
+  tailorResume: (
+    jobDescription: string,
+    summary: string,
+    skills: string[],
+    token: string
+  ) => {
+    return apiRequest(
+      "/api/ai/tailor-resume",
+      {
+        method: "POST",
+        body: JSON.stringify({ jobDescription, summary, skills }),
+      },
+      token
+    );
+  },
 };
 
 export const pdfApi = {

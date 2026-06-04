@@ -2641,9 +2641,73 @@ router.post("/upload-pdf", upload.single("file"), async (req, res) => {
     // STEP 4: Map parsed data to resume schema
     const resumeData = {
       userId: user._id,
+      name: parsedData.name
+        ? `${parsedData.name}'s Resume`
+        : "Resume from PDF",
       title: parsedData.name
         ? `${parsedData.name}'s Resume`
         : "Resume from PDF",
+      templateId: req.body.templateId || "classic-clear",
+      design: {
+        primaryColor: "#3626A7",
+        accentColor: "#6366F1",
+        textColor: "#111827",
+        backgroundColor: "#FFFFFF",
+        headingFont: "Inter",
+        bodyFont: "Inter",
+        fontSize: "md",
+        pageMargin: "normal",
+        sectionSpacing: "normal",
+        layout: "single",
+        headerStyle: "minimal",
+        showDividers: true,
+      },
+      content: {
+        personalInfo: {
+          name: parsedData.name || "",
+          email: parsedData.email || "",
+          phone: parsedData.phone || "",
+          location: "",
+          linkedin: "",
+          website: "",
+          photoURL: "",
+        },
+        summary: parsedData.summary || "",
+        experience: (parsedData.experience || []).map((exp) => ({
+          company: exp.company || "",
+          position: exp.position || "",
+          startDate: exp.startDate || "",
+          endDate: exp.endDate || null,
+          current: exp.current || false,
+          description: "",
+          bullets: exp.bullets || [],
+        })),
+        education: (parsedData.education || []).map((edu) => ({
+          institution: edu.institution || "",
+          degree: edu.degree || "",
+          field: edu.field || null,
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || null,
+          current: edu.current || false,
+          gpa: edu.gpa || null,
+        })),
+        skills: parsedData.skills || [],
+        projects: [],
+        certifications: [],
+        languages: [],
+        customSections: [],
+      },
+      sectionOrder: [
+        "summary",
+        "experience",
+        "education",
+        "skills",
+        "projects",
+        "certifications",
+        "languages",
+        "customSections"
+      ],
+      // legacy compatibility
       template: req.body.template || "modern",
       theme: {
         primaryColor: req.body.primaryColor || "#3b82f6",

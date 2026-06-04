@@ -20,7 +20,6 @@ const educationSchema = new mongoose.Schema({
   gpa: String,
 });
 
-// NEW: Custom section item schema
 const customSectionItemSchema = new mongoose.Schema({
   title: String,
   subtitle: String,
@@ -32,9 +31,8 @@ const customSectionItemSchema = new mongoose.Schema({
   url: String,
 });
 
-// NEW: Custom section schema
 const customSectionSchema = new mongoose.Schema({
-  name: { type: String, required: true }, // e.g. "Projects", "Certifications"
+  name: { type: String, required: true },
   items: [customSectionItemSchema],
 });
 
@@ -44,14 +42,76 @@ const resumeSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  title: {
+  // FlowCV Style Data Model
+  name: {
     type: String,
     required: true,
+    default: "My Resume",
+  },
+  templateId: {
+    type: String,
+    required: true,
+    default: "classic-clear",
+  },
+  design: {
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({
+      primaryColor: "#3626A7",
+      accentColor: "#6366F1",
+      textColor: "#111827",
+      backgroundColor: "#FFFFFF",
+      headingFont: "Inter",
+      bodyFont: "Inter",
+      fontSize: "md",
+      pageMargin: "normal",
+      sectionSpacing: "normal",
+      layout: "single",
+      headerStyle: "minimal",
+      showDividers: true,
+    }),
+  },
+  content: {
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({
+      personalInfo: {
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        linkedin: "",
+        website: "",
+        photoURL: "",
+      },
+      summary: "",
+      experience: [],
+      education: [],
+      skills: [],
+      projects: [],
+      certifications: [],
+      languages: [],
+      customSections: [],
+    }),
+  },
+  sectionOrder: {
+    type: [String],
+    default: () => [
+      "summary",
+      "experience",
+      "education",
+      "skills",
+      "projects",
+      "certifications",
+      "languages",
+      "customSections"
+    ],
+  },
+  // Legacy fields for backwards compatibility
+  title: {
+    type: String,
     default: "Untitled Resume",
   },
   template: {
     type: String,
-    required: true,
     default: "modern",
   },
   theme: {
@@ -78,7 +138,7 @@ const resumeSchema = new mongoose.Schema({
   experience: [experienceSchema],
   education: [educationSchema],
   skills: [String],
-  customSections: [customSectionSchema], // NEW
+  customSections: [customSectionSchema],
   sections: [
     {
       type: {
@@ -109,6 +169,10 @@ const resumeSchema = new mongoose.Schema({
 
 resumeSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
+  // Sync legacy title with name if needed
+  if (this.isModified("name")) {
+    this.title = this.name;
+  }
   next();
 });
 
